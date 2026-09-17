@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """
 Linear Camera Profile Generator
 Creates a camera-specific linear DCP profile required for applying 3D LUTs in Camera Raw.
+Licensed under the MIT License.
 """
 
 import os
@@ -46,7 +48,11 @@ def search_camera_profile(query, search_dir):
     
     unique_candidates = list({p.resolve(): p for p in candidates}.values())
     query_lower = query.lower()
-    matches = [p for p in unique_candidates if query_lower in p.name.lower()]
+    matches = [
+        p for p in unique_candidates
+        if query_lower in p.name.lower()
+        and (p.stem.lower() == "adobe standard" or p.stem.lower().endswith(" adobe standard"))
+    ]
     return sorted(matches, key=lambda x: x.name)
 
 def ask_yes_no(prompt_text, default=True):

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """
 Fujifilm DCP Camera Profile Generator
 Compiles native DCP profiles directly for Adobe Lightroom & Camera Raw.
+Licensed under the MIT License.
 """
 
 import os
@@ -49,7 +51,11 @@ def search_camera_profile(query, search_dir):
     
     unique_candidates = list({p.resolve(): p for p in candidates}.values())
     query_lower = query.lower()
-    matches = [p for p in unique_candidates if query_lower in p.name.lower()]
+    matches = [
+        p for p in unique_candidates
+        if query_lower in p.name.lower()
+        and (p.stem.lower() == "adobe standard" or p.stem.lower().endswith(" adobe standard"))
+    ]
     return sorted(matches, key=lambda x: x.name)
 
 def ask_yes_no(prompt_text, default=True):
