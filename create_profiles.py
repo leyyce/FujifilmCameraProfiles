@@ -157,6 +157,9 @@ def main():
 
         cleaned_base_xml = re.sub(r"<LookTable[\s\S]*?</LookTable>", "", base_xml_content)
 
+        successful_dcps = []
+        failed_dcps = []
+
         print(f"\nBuilding profiles for {camera_name}:")
         for txt_file in txt_files:
             look_name = clean_look_name(txt_file.stem)
@@ -177,7 +180,7 @@ def main():
                 idx = match.start()
                 modified_xml = cleaned_base_xml[:idx] + replacement_snippet + "\n" + cleaned_base_xml[idx:]
 
-            # Apply required metadata tags[cite: 1]
+            # Apply required metadata tags
             modified_xml = set_xml_tag(modified_xml, "DefaultBlackRender", "1")
             modified_xml = set_xml_tag(modified_xml, "ProfileLookTableEncoding", "1")
             modified_xml = set_xml_tag(modified_xml, "ProfileName", display_name)
@@ -189,21 +192,29 @@ def main():
             compile_res = subprocess.run([dcptool_bin, "-c", str(target_xml), str(target_dcp)], capture_output=True, text=True)
             if compile_res.returncode == 0 and target_dcp.is_file():
                 print(f"  [OK] '{display_name}' -> {target_dcp.name}")
+                successful_dcps.append(target_dcp)
             else:
                 err_msg = (compile_res.stderr or compile_res.stdout).strip()
                 print(f"  [FAILED] {target_dcp.name}: {err_msg if err_msg else 'Unknown error'}")
+                failed_dcps.append((display_name, err_msg))
 
-    print(f"\nBuild complete. Profiles saved to: {out_dir}")
+    if not successful_dcps:
+        sys.exit("\nError: No profiles could be compiled. Aborting.")
+
+    if failed_dcps:
+        print(f"\nBuild finished with {len(failed_dcps)} failure(s). {len(successful_dcps)} profile(s) saved to: {out_dir}")
+    else:
+        print(f"\nBuild complete. All profiles saved to: {out_dir}")
 
     # Installation Prompt
     print("\n--- Deployment ---")
     if ask_yes_no("Do you want to install these profiles directly to Lightroom/CameraRaw?", default=True):
         target_install_dir = user_profiles_dir / f"Fujifilm Simulations {camera_name}"
         target_install_dir.mkdir(parents=True, exist_ok=True)
-        for dcp in out_dir.glob("*.dcp"):
+        for dcp in successful_dcps:
             shutil.copy2(dcp, target_install_dir / dcp.name)
 
-        print(f"\nSuccessfully installed to:\n{target_install_dir}")
+        print(f"\nSuccessfully installed {len(successful_dcps)} profile(s) to:\n{target_install_dir}")
         print("\nRestart Lightroom Classic to load the profiles.")
     else:
         print(f"\nManual installation: Copy the folder '{out_dir.name}' to:\n{user_profiles_dir}")

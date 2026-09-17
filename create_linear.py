@@ -25,7 +25,7 @@ def get_adobe_paths():
         user_profiles_dir = Path.home() / "Library" / "Application Support" / "Adobe" / "CameraRaw" / "CameraProfiles"
     else:
         base_search = Path.cwd()
-        user_profiles_dir = Path.cwd() / "installed_dcp"
+        user_profiles_dir = Path.cwd() / "installed_profiles"
     return base_search, user_profiles_dir
 
 def find_dcptool():
